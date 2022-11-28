@@ -44,20 +44,13 @@ int main(){
     clock_t runtime = clock();
 
     Time.open("Inf-rho.txt");               //output (density of infected nodes).
-    ER.open("actf-rho.txt");                //output (density of active nodes).
+    ER.open("act-rho.txt");                //output (density of active nodes).
 
     srand(time(NULL));
-
-    /*for(int b =0; b < N; b++){          //reset
-
-        A[b].clear();
-                //sis [b]=0;
-                //sis_up [b]=0;
-
-    }
-*/
-
-    for (int i=0; i< N;i++){            //generate ER networks
+    
+    //-------------------------- generate ER networks -----------------------------------.
+    
+    for (int i=0; i< N;i++){           
         for (int j=0; j<i; j++){
 
             float ran = rand()/(1.+RAND_MAX);
@@ -65,8 +58,6 @@ int main(){
 
                 A[i].push_back(j);
                 A[j].push_back(i); 
-                        // A[i][j]++;
-                       // A[j][i]++; 
             }
             float ran1 = rand()/(1.+RAND_MAX);
             if( ran1 < p){
@@ -81,7 +72,7 @@ int main(){
     double beta_A=0;
 
     while ( beta < 0.02 ){
-        //cout<<"++++++++++++++++++"<< " " << beta <<endl;
+        
         beta_A = gama * beta;
 
         int ens[ensemble] ={0};             //for density of infected nodes.
@@ -130,14 +121,14 @@ int main(){
                         if (thresh[q0]){
 
                             act_nei++;
-                           // cout << ">>>" <<act_nei <<endl;
+                            
                         }
 
                     }
 
                     int k =0;
                     k = B[f].size();
-                    //cout << phi <<'\t' << ((double)act_nei/k) <<endl;
+                    
                     if(phi < ((double) act_nei/k)){
 
                         thresh_up[f]=1;
@@ -146,12 +137,13 @@ int main(){
                         thresh_up[f]=0;
                     }
                     //---------------------- end threshold model -------------------------------.
+                    
                     //---------------------- start SIS model -----------------------------------.
 
                     float ran1= rand()/(1.+RAND_MAX);
 
                     if ((sis[f]) && (ran1 < muo)){              //recovery with mu prob.
-                        //cout <<"hello" << endl;
+                        
                         sis_up[f]=0;
                     }  
 
@@ -188,8 +180,8 @@ int main(){
 
 
                 }//end for f. 
-                //------------------------------------- start rewairing based on SIS model ---------------------
-                //var =0;
+                //------------------------------------- start rewairing based on SIS model ---------------------.
+                
                 vector <int> sus_to(N);
                 sus_to.clear();
 
@@ -197,20 +189,16 @@ int main(){
                     
                     sis[u] = sis_up[u];
                     thresh[u] = thresh_up[u];
-                    //var += sis_up[u];
 
                     if ((sis[u] ==0)&&(thresh[u]==1)){
 
                         sus_to.push_back(u);
                     }
 
-
                 }
-
 
                 int oo =0;
                 for (int c1=0;c1 <N;c1++){
-                    
                     
                     for (int c2=0; c2 < A[c1].size(); c2++){
 
@@ -262,52 +250,22 @@ int main(){
                                     A[c1].push_back(q3);
                                     A[q3].push_back(c1);
 
-                                   // ER << c1 << '\t' << q3 <<"\t" << A[c1].size()<<endl;
-
-                                    //oo ++;
                                     break;
                                 }
 
-                               // if (counter == sus_to.size()) flag= false;
-                            }//for sus_total
-                            //oo += Inf_nei[c1][q0];
+                            }//for sus_total.
 
                         }
                     }//for c2
 
-                  //------------------------------- end rewairing ----------------------------------------.  
+                //------------------------------- end rewairing ----------------------------------------.  
 
                     
                 }//for c1.
 
-                //ER << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" <<endl;
-
-               // cout << oo << "\t" << var <<endl;
-
-               // cout << var  << endl;
-                
-               /* control2 += var;
-
-                if(t% width ==0){
-
-                    control2 /= (width);
-                   // cout << control1 <<"+++++++++++" << control2  << ">>>>>>" << var<< endl;
-                    if(abs(control1-control2)< .001){
-
-                        control2 =0;
-                        t = tmax;
-                    }else{
-
-                        control1 = control2;
-                        control2 =0;
-                    }
-                }*/
-                
-
                 t++;
-              //  cout << t <<endl;
             }//end of while t.
-          //  cout << "????????????????????????????????????????????" << t <<endl;
+            
             var =0;
             int densityofinf =0;
             int densityofact =0;
