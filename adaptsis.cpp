@@ -1,6 +1,3 @@
-//adaptive networks for sis model. we use Gross paper's values and we have good agreement between them.25.3.1401
-//we try to use adaptive network in my multiplex networks.4/5/1401
-
 #include<iostream>
 #include<time.h>
 #include<stdlib.h>
@@ -9,45 +6,45 @@
 #include<cstdlib>
 #include<vector>
 
-#define N 100000
+#define N 100000                    //number of nodes in each layer.
 
 using namespace std;
 
 ofstream Time;
 ofstream ER;
 
-//int adj_arr[1000][1000];          // Adjecancy matrix
-vector <vector<int>> A(N);          // Adjecancy matrix
-vector <vector<int>> B(N);
+vector <vector<int>> A(N);          // Adjecancy matrix for opinion layer (threshold model)
+vector <vector<int>> B(N);          //Adjecancy matrix for disease layer (SIS model & adaptive network)
 
-double p = 0.0001;                   // p= k/ n-1;
-int N0 = 10000;                       // number of infected node at time 0.
+double p = 0.0001;                      // p= k/ n-1 for initial ER networks;
+int N0 = 10000;                         // number of infected node at time 0.
 
 int ensemble = 1;
-int tmax = 4000;                     // time steps.
+int tmax = 4000;                        // time steps.
 
-double beta = 0.0;                    // probability of a node get infected
-double muo = 0.002;                    // probability of recovery
+double beta = 0.0;                      // probability of a node get infected
+double muo = 0.002;                     // probability of recovery
 
-double gama = 0.98;
-double kapa = 0.5;
+double gama = 0.98;                     //Immunization coefficient (gama * beta = beta_A, beta_A <= beta)
+double kapa = 0.5;                      //selfawaerness probability (The probability of an infected node get active spontaneously)
 
-double rew = 0.04;
+double rew = 0.04;                      //rewairing probability (w).
 
-double phi = 0.2;
+double phi = 0.2;                       //threshold value.
 
-int sis[N]={0};                     //state of each node ; 1= infected , 0= suseptible.at time t. 
-int sis_up[N]={0};                  //state of each node at time t+1.
-int thresh[N]={0};
-int thresh_up[N]={0};
+int sis[N]={0};                     //state of each node in disease layer; 1= infected , 0= suseptible at time t. 
+int sis_up[N]={0};                  //state of each node in disease layer at time t+1.
+
+int thresh[N]={0};                  //state of each node in opinion layer; 1= active , 0= inactive at time t.
+int thresh_up[N]={0};               //state of each node in opinion layer at time t+1.
 
 
 int main(){
 
     clock_t runtime = clock();
 
-    Time.open("Inf-forw rew0.04.txt");
-    ER.open("actf.04.txt");
+    Time.open("Inf-rho.txt");               //output (density of infected nodes).
+    ER.open("actf-rho.txt");                //output (density of active nodes).
 
     srand(time(NULL));
 
@@ -60,7 +57,7 @@ int main(){
     }
 */
 
-    for (int i=0; i< N;i++){            //generate ER network
+    for (int i=0; i< N;i++){            //generate ER networks
         for (int j=0; j<i; j++){
 
             float ran = rand()/(1.+RAND_MAX);
@@ -87,14 +84,14 @@ int main(){
         //cout<<"++++++++++++++++++"<< " " << beta <<endl;
         beta_A = gama * beta;
 
-        int ens[ensemble] ={0};
-        int ens_A[ensemble] ={0};
+        int ens[ensemble] ={0};             //for density of infected nodes.
+        int ens_A[ensemble] ={0};           //for density of active nodes.
      
         for(int e=0 ; e <ensemble ; e++){  
             
             if(var == 0){
                 int y=0;
-                while(y<N0 ){                       //initialization
+                while(y<N0 ){                       //initialization for disease layer.
                     int O=0;
                     O = rand()%N;
                     if (sis_up[O]==0){
@@ -104,13 +101,13 @@ int main(){
                     }
                 }
             }
-            for (int c1=0; c1<N; c1++){
+            for (int c1=0; c1<N; c1++){         //reset threshold states.
                 thresh[c1]=0;
                 thresh_up[c1]=0;
             }
 
             int y=0;
-            while(y<N0 ){                       //initialization
+            while(y<N0 ){                       //initialization for opinion layer.
                 int O=0;
                 O = rand()%N;
                 if (thresh_up[O]==0){
@@ -119,16 +116,10 @@ int main(){
                     y++;
                 }
             }
-            //cout << "aaa" << y <<endl;
-
-           // double control1 = 10000;                //time window
-            //double control2 = 0;
-
-           // int width =40;
 
             int t=0;  
-            while(t<tmax){
-
+            while(t<tmax){                              //start dynamics.
+                //---------------------------- threshold model ------------------------------.
                 for (int f=0; f<N; f++){
                     int act_nei =0;
                     for (int f0=0; f0 < B[f].size();f0++){
@@ -154,7 +145,8 @@ int main(){
 
                         thresh_up[f]=0;
                     }
-
+                    //---------------------- end threshold model -------------------------------.
+                    //---------------------- start SIS model -----------------------------------.
 
                     float ran1= rand()/(1.+RAND_MAX);
 
@@ -171,14 +163,14 @@ int main(){
 
                         float ran2 = rand()/(1.+RAND_MAX);
 
-                        if ((thresh[f]==1)&&(sis[f]==0)&&(ran2<(beta_A *sis[q]))){
+                        if ((thresh[f]==1)&&(sis[f]==0)&&(ran2<(beta_A *sis[q]))){          //the probability of active node get infected.
 
                             sis_up[f]=1;
                             flag=true;
                         }
                         if (flag) break;
 
-                        if((thresh[f]==0)&&(sis[f]==0) && ran2 < (beta * sis[q])){          //infect with beta prob.
+                        if((thresh[f]==0)&&(sis[f]==0) && ran2 < (beta * sis[q])){          //the probability of inactive node get infected.
 
                             sis_up[f]=1;
                             flag = true;
@@ -186,25 +178,17 @@ int main(){
                         }  
                         if(flag) break; 
                     }
+                    //------------------------------------------- end SIS model ------------------------------.
 
                     double ranR= rand()/(1.+RAND_MAX);
-                    if((sis[f]==1)&&(thresh[f]==0)&& kapa<ranR){
+                    if((sis[f]==1)&&(thresh[f]==0)&& kapa<ranR){        //self-awearness probability.
 
                         thresh_up[f]=1;
                     }
 
 
-                }//for f. 
-
-
-                /*for (int c=0;c < N; c++){
-                    
-                    Inf_nei[c].clear();
-                } 
-
-                Inf_nei.resize(N);*/      
-                
-                
+                }//end for f. 
+                //------------------------------------- start rewairing based on SIS model ---------------------
                 //var =0;
                 vector <int> sus_to(N);
                 sus_to.clear();
@@ -291,7 +275,7 @@ int main(){
                         }
                     }//for c2
 
-                    
+                  //------------------------------- end rewairing ----------------------------------------.  
 
                     
                 }//for c1.
@@ -348,8 +332,8 @@ int main(){
             ens_A[a]=0;
         }
 
-        Time << beta << '\t' << inf/double(N * ensemble )<< endl;
-        ER << beta << '\t' << act/double(N * ensemble )<< endl;
+        Time << beta << '\t' << inf/double(N * ensemble )<< endl;       //txt output for disease layer.
+        ER << beta << '\t' << act/double(N * ensemble )<< endl;         //txt output for opinion layer.
 
         cout << beta <<endl;
 
